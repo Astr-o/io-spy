@@ -44,10 +44,6 @@ export default {
 
   mixins: [saveState],
 
-  created() {
-    this.address = this.localStorage.get("lsAddress");
-  },
-
   methods: {
     connect() {
       if (this.io) {
