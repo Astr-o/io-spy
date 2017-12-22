@@ -7,10 +7,12 @@
         <input id="address" v-model="address" type="text">
 
 
-        <label for="events">Channels:</label>
-        <textarea name="events" id="events" cols="30" rows="10" v-model="channels"></textarea>
-        <input type="button" value="connect" v-on:click="connect()">
+        <label for="events">Events: </label>
+        <textarea name="events" id="events" cols="30" rows="10" v-model="events"></textarea>
+        <button type="button" value="connect" v-on:click="connect()">connect</button>
       </form>
+      <h4 v-if='connected'>connected</h4>
+      <h4 v-else>not connected</h4>
 
     </div>
     <div class="output">
@@ -23,48 +25,91 @@
 
 
 <script>
-import io from 'socket.io-client'
+const io = require("socket.io-client");
+
+import saveState from "vue-save-state";
 
 export default {
-  name: 'app',
-  data () {
+  name: "app",
+  data() {
     return {
-      msg: 'Welcome to Your Vue.js App',
-      json: { message: "Connect to an address"},
+      msg: "Welcome to Your Vue.js App",
+      json: { message: "Connect to an address" },
       events: "",
       address: "",
-      io: null
-    }
+      io: null,
+      connected: false
+    };
+  },
+
+  mixins: [saveState],
+
+  created() {
+    this.address = this.localStorage.get("lsAddress");
   },
 
   methods: {
-    connect: function() {
-      const addr = this.address
-      const events = this.events.split('\n')
+    connect() {
+      if (this.io) {
+        this.io.disconnect();
+        this.io = null;
+      }
 
-      console.log(`Connecting io client to ${addr} monitoring ${events}`)
+      const addr = this.address;
 
-      const socket = io(addr)
+      let events = [];
+      try {
+        events = JSON.parse(this.events);
+      } catch (error) {
+        console.error(`events field ${this.events} is not valid json`);
+        console.error(error);
+      }
+
+      console.log(`Connecting io client to ${addr} monitoring ${events}`);
+
+      const socket = io(addr);
+
+      socket.on("connect", () => {
+        console.log(`socket connected`);
+        console.log(socket);
+        this.connected = true;
+      });
+
+      socket.on("error", () => {
+        console.log(`disconnected`);
+        this.connected = false;
+      });
 
       events.forEach(e => {
-        socket.on(e, data => this.json = data)
-      })
+        console.debug(`adding event: ${e}`);
+        socket.on(e, data => {
+          console.log(`socket ${socket.id} - recieved ${e}`);
+          console.log(data);
+          this.json = data;
+        });
+      });
 
-      this.io = socket
+      this.io = socket;
+    },
+
+    getSaveStateConfig() {
+      return {
+        cacheKey: "app",
+        saveProperties: ["address", "events"]
+      };
     }
-   }
-
-
-}
+  }
+};
 </script>
 
 <style lang="scss">
-html, body {
-  margin: 0
+html,
+body {
+  margin: 0;
 }
 
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -75,7 +120,7 @@ html, body {
 .sidebar {
   margin: 0;
   width: 20%;
-  background-color: #2c3e50;;
+  background-color: #2c3e50;
   height: 100vh;
   color: white;
   font-weight: bold;
@@ -103,7 +148,8 @@ html, body {
   text-align: left;
 }
 
-h1, h2 {
+h1,
+h2 {
   font-weight: normal;
 }
 
