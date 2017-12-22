@@ -16,7 +16,7 @@
 
     </div>
     <div class="output">
-       <tree-view :data="json" :options="{maxDepth: 3}"></tree-view>
+       <event v-for="(m, i) in messages" :key="i" :type="m.type" :time="m.time" :data="m.data" ></event>
     </div>
 
 
@@ -28,9 +28,15 @@
 const io = require("socket.io-client");
 
 import saveState from "vue-save-state";
+import Event from "./Event.vue";
 
 export default {
   name: "app",
+
+  components: {
+    "event": Event
+  },
+
   data() {
     return {
       msg: "Welcome to Your Vue.js App",
@@ -38,11 +44,24 @@ export default {
       events: "",
       address: "",
       io: null,
-      connected: false
+      connected: false,
+      messages: []
     };
   },
 
   mixins: [saveState],
+
+  computed: {
+    eventTypes() {
+      try {
+        return JSON.parse(this.events);
+      } catch (error) {
+        console.error(`events field ${this.events} is not valid json`);
+        console.error(error);
+        return [];
+      }
+    }
+  },
 
   methods: {
     connect() {
@@ -51,41 +70,30 @@ export default {
         this.io = null;
       }
 
-      const addr = this.address;
+      console.log(`Connecting io client to ${this.address} monitoring ${this.eventTypes}`);
 
-      let events = [];
-      try {
-        events = JSON.parse(this.events);
-      } catch (error) {
-        console.error(`events field ${this.events} is not valid json`);
-        console.error(error);
-      }
+      this.io = io(this.address);
 
-      console.log(`Connecting io client to ${addr} monitoring ${events}`);
-
-      const socket = io(addr);
-
-      socket.on("connect", () => {
+      this.io.on("connect", () => {
         console.log(`socket connected`);
-        console.log(socket);
+        console.log(this.io);
         this.connected = true;
       });
 
-      socket.on("error", () => {
+      this.io.on("error", () => {
         console.log(`disconnected`);
         this.connected = false;
       });
 
-      events.forEach(e => {
-        console.debug(`adding event: ${e}`);
-        socket.on(e, data => {
-          console.log(`socket ${socket.id} - recieved ${e}`);
+      this.eventTypes.forEach(e => {
+        console.debug(`adding adding listener for event: ${e}`);
+        this.io.on(e, data => {
+          console.log(`socket ${this.io.id} - recieved ${e}`);
           console.log(data);
-          this.json = data;
+          this.messages.push({type: e, time: new Date().toString(), data})
         });
       });
 
-      this.io = socket;
     },
 
     getSaveStateConfig() {
