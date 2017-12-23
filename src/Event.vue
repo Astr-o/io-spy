@@ -2,7 +2,7 @@
   <div>
       <h3>{{ type }}</h3>
       <h4>{{ time }}</h4>
-      <tree-view :data="data" :options="{maxDepth: 3}"></tree-view>
+      <tree-view :data="data" :options="{maxDepth: 5}"></tree-view>
   </div>
 </template>
 
