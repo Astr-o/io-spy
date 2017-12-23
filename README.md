@@ -1,6 +1,6 @@
-# io-spy
+# io.spy
 
-> A Vue.js project
+A Vue.js socket IO test client
 
 ## Build Setup
 
