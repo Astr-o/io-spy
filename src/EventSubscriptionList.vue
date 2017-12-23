@@ -1,11 +1,12 @@
 <template>
   <div class="list-container">
-    <ul>
-      <li v-for="(item, index) in list" :key="index"> {{item.name}} <button class="btn-remove" v-on:click="remove(index)">X</button></li>
-    </ul>
-    <label for="newEvent">Add Event</label>
-    <input type="text" name="newEvent" id="newEvent" v-model="newEvent"/>
-    <button v-on:click="add()">+</button>
+    <b-list-group>
+      <b-list-group-item v-for="(item, index) in list" :key="index" v-on:click="remove(index)" button>{{item.name}}</b-list-group-item>
+    </b-list-group>
+    <b-form inline>
+      <b-input id="newEvent" v-model="newEvent" type="text"></b-input>
+      <b-button type="button" value="connect" v-on:click="add()">add event</b-button>
+    </b-form>
   </div>
 </template>
 
