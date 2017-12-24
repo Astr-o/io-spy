@@ -16,7 +16,8 @@
     "socket.io": "^2.0.4",
     "vue": "^2.5.11",
     "vue-json-tree-view": "^2.1.1",
-    "vue-save-state": "^1.2.0"
+    "vue-save-state": "^1.2.0",
+    "vuex": "^3.0.1"
   },
   "browserslist": [
     "> 1%",

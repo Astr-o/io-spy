@@ -2,19 +2,17 @@
   <b-container fluid id="app">
     <b-row>
       <b-col cols="2"  class="sidebar">
-                <h2>IO.SPY</h2>
+        <h2>IO.SPY</h2>
         <b-form inline>
           <b-input id="address" v-model="address" type="text"></b-input>
           <b-button type="button" value="connect" v-on:click="connect()">connect</b-button>
         </b-form>
-      <sub-list :list="events"></sub-list>
-
-      <h4 v-if='connected'>connected</h4>
-      <h4 v-else>not connected</h4>
+      <event-list></event-list>
+      <h4>{{ status }}</h4>
       </b-col >
       <b-col cols="10" offset="2" class="output">
        <b-button id="clear" name="clear" v-on:click="clear()">clear</b-button>
-       <event v-if="messages" v-for="(m, i) in messages" :key="i" :type="m.type" :time="m.time" :data="m.data"  ></event>
+       <message v-if="messages" v-for="(m, i) in messages" :key="i" :type="m.type" :time="m.time" :data="m.data"  ></message>
       </b-col>
     </b-row>
   </b-container>
@@ -28,28 +26,29 @@ import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue/dist/bootstrap-vue.css";
 
 import saveState from "vue-save-state";
-import Event from "./Event.vue";
-import EventSubscriptionList from "./EventSubscriptionList.vue";
+import Message from "./Message.vue";
+import EventList from "./EventList.vue";
+
+import { mapState } from "vuex";
 
 export default {
   name: "app",
 
   components: {
-    event: Event,
-    "sub-list": EventSubscriptionList
+    message: Message,
+    "event-list": EventList
+  },
+
+  computed: {
+    ...mapState(['messages'])
   },
 
   data() {
     return {
-      events: [],
       address: "",
-      io: null,
-      connected: false,
-      messages: []
+      io: null
     };
   },
-
-  mixins: [saveState],
 
   methods: {
     connect() {
@@ -67,12 +66,13 @@ export default {
       this.io.on("connect", () => {
         console.log(`socket connected`);
         console.log(this.io);
-        this.connected = true;
+        this.$state.commit("connected");
       });
 
-      this.io.on("error", () => {
+      this.io.on("error", err => {
         console.log(`disconnected`);
         this.connected = false;
+        this.$state.commit("error", err);
       });
 
       this.events.forEach(e => {
@@ -80,7 +80,7 @@ export default {
         this.io.on(e.name, data => {
           console.log(`socket ${this.io.id} - recieved ${e.name}`);
           console.log(data);
-          this.messages.push({
+          this.$state.commit("newMessage", {
             type: e.name,
             time: new Date().toString(),
             data
@@ -91,14 +91,7 @@ export default {
 
     clear() {
       console.log("clearing messages");
-      this.message = [];
-    },
-
-    getSaveStateConfig() {
-      return {
-        cacheKey: "app",
-        saveProperties: ["address"]
-      };
+      this.$state.commit("clearMessages");
     }
   }
 };

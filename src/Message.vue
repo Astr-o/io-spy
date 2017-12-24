@@ -12,7 +12,7 @@
 import moment from 'moment'
 
 export default {
-    name: "event",
+    name: "message",
     props: ['type', 'data', 'time'],
 
     computed: {
